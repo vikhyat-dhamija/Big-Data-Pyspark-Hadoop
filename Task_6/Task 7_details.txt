@@ -1,0 +1,314 @@
+Task 7: For producing the Top100 high frequency words in the file
+
+Solution :  Please find attached the codes below 
+
+For the execution of this task we have chained the two map reduce programs and Word Count i.e. the output of the first is theen given two other map reduce program 
+to bring out the top 100 words from the file.
+
+We used the gutenberg file as provided.
+
+PART A,B,C
+
+The Programs are attached also and are provided here for refernce :-
+
+WordCount Program
+
+import java.io.IOException;
+import java.util.*;
+ 
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.conf.*;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.lib.input.*;
+import org.apache.hadoop.mapreduce.lib.output.*;
+import org.apache.hadoop.util.*;
+
+public class WordCount {
+
+  public static class Map 
+	  extends Mapper<Object, Text, Text, IntWritable> {
+
+    private final static IntWritable one = new IntWritable(1);
+    private Text word = new Text();
+
+    @Override
+    public void map(Object key,
+                    Text value,
+                    Context context) 
+		throws IOException, InterruptedException {
+      String line = value.toString();
+      StringTokenizer tokenizer = new StringTokenizer(line);
+      while (tokenizer.hasMoreTokens()) {
+        word.set(tokenizer.nextToken());
+        context.write(word, one);
+      }
+    }
+  }
+
+  public static class Reduce 
+  	extends Reducer<Text, IntWritable, Text, IntWritable> {
+
+    @Override
+    public void reduce(Text key,
+                       Iterable<IntWritable> valueList,
+                       Context context)
+	       throws IOException, InterruptedException {
+      int sum = 0;
+      Iterator<IntWritable> values = valueList.iterator();
+      while (values.hasNext()) {
+        sum += values.next().get();
+      }
+      context.write(key, new IntWritable(sum));
+    }
+  }
+
+  public static void main(String[] args) throws Exception {
+
+    if (args.length != 2) {
+      System.err.println("Usage: wordcount <in> <out>");
+      System.exit(2);
+    }
+
+    Job job = Job.getInstance(new Configuration());
+    job.setJobName("wordcount");
+    job.setJarByClass(WordCount.class);
+
+    job.setMapperClass(Map.class);
+    job.setCombinerClass(Reduce.class);
+    job.setReducerClass(Reduce.class);
+
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(IntWritable.class);
+
+    FileInputFormat.setInputPaths(job, new Path(args[0]));
+    FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+    job.submit();
+    job.waitForCompletion(true);
+  }
+}
+
+Then another Map reduce program for the top 100 words :-
+
+import java.io.*; 
+import java.util.*; 
+import org.apache.hadoop.io.Text; 
+import org.apache.hadoop.io.LongWritable; 
+import org.apache.hadoop.mapreduce.Mapper; 
+import java.io.IOException;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.conf.*;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.lib.input.*;
+import org.apache.hadoop.mapreduce.lib.output.*;
+import org.apache.hadoop.util.*;
+import java.io.IOException; 
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap; 
+import org.apache.hadoop.io.LongWritable; 
+import org.apache.hadoop.io.Text; 
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;   
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;
+import org.apache.hadoop.conf.Configuration; 
+import org.apache.hadoop.fs.Path; 
+import org.apache.hadoop.io.LongWritable; 
+import org.apache.hadoop.io.Text; 
+import org.apache.hadoop.mapreduce.Job; 
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat; 
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat; 
+import org.apache.hadoop.util.GenericOptionsParser;
+
+public class practice  {
+
+public static class Map2 extends Mapper<Object, Text, Text, LongWritable> { 
+  
+    private TreeMap<Long, String> tmap; 
+  
+    @Override
+    public void setup(Context context) throws IOException,InterruptedException 
+    { 
+        tmap = new TreeMap<Long, String>(); 
+    } 
+  
+    @Override
+    public void map(Object key, Text value, Context context) throws IOException, InterruptedException 
+    { 
+  
+        
+        String[] tokens = value.toString().split("\t"); 
+
+        String word = tokens[0]; 
+
+        long no_of_words = Long.parseLong(tokens[1]); 
+  
+        tmap.put(no_of_words, word); 
+  
+        if (tmap.size() > 100) 
+        { 
+            tmap.remove(tmap.firstKey()); 
+        } 
+    } 
+  
+    @Override
+    public void cleanup(Context context) throws IOException,InterruptedException 
+    { 
+    	for (Entry<Long, String> entry : tmap.entrySet())  
+        { 
+            long count = (long)entry.getKey(); 
+            String name = (String)entry.getValue(); 
+		
+  
+            context.write(new Text(name), new LongWritable(count)); 
+            
+         } 
+    } 
+} 
+
+public static class Reduce2 extends Reducer<Text,LongWritable, LongWritable, Text> { 
+
+	private TreeMap<Long, String> tmap2; 
+
+	@Override
+	public void setup(Context context) throws IOException, InterruptedException 
+	{ 
+		tmap2 = new TreeMap<Long, String>(); 
+	} 
+
+	@Override
+	public void reduce(Text key, Iterable<LongWritable> values,Context context) throws IOException, InterruptedException 
+	{ 
+
+		String name = key.toString(); 
+		long count = 0; 
+
+		for (LongWritable val : values) 
+		{ 
+			count = val.get(); 
+		} 
+
+		
+		tmap2.put(count, name); 
+
+		
+		if (tmap2.size() > 100) 
+		{ 
+			tmap2.remove(tmap2.firstKey()); 
+		} 
+	} 
+	
+
+	@Override
+	public void cleanup(Context context) throws IOException,InterruptedException 
+	{ 
+		for (Entry<Long, String> entry : tmap2.entrySet())  
+        { 
+            long count = (long)entry.getKey(); 
+            String name = (String)entry.getValue(); 
+			context.write(new LongWritable(count), new Text(name)); 
+		} 
+	} 
+}
+
+
+      
+
+public static void main (String[] args) throws Exception { 
+
+	Configuration conf = new Configuration(); 
+     
+
+    if (args.length < 2)  
+    { 
+        System.err.println("Error: please provide two paths"); 
+        System.exit(2); 
+    } 
+
+    Job job = Job.getInstance(conf); 
+    job.setJarByClass(practice.class); 
+
+    job.setMapperClass(Map2.class); 
+    job.setReducerClass(Reduce2.class); 
+    
+    job.setMapOutputKeyClass(Text.class);
+    job.setMapOutputValueClass(LongWritable.class);
+
+    job.setOutputKeyClass(LongWritable.class); 
+    job.setOutputValueClass(Text.class); 
+    
+    FileInputFormat.addInputPath(job, new Path(args[0])); 
+    FileOutputFormat.setOutputPath(job, new Path(args[1])); 
+
+    job.submit();
+    job.waitForCompletion(true);
+    
+    System.exit(job.waitForCompletion(true) ? 0 : 1); 
+
+ }
+
+
+}
+
+Both programs are running and their execution and results screenshots are attached.
+
+Brief about the logic:-
+
+In this program we have to calculate the count of the words and then we have to select the high frequency 100 words from them. 
+
+There are various methodologies for this :-
+
+First calculate the word and the word count then 
+
+1.multiply the word count by -1 and make it the key and then when they will arrive at the reducer then they will be sorted in descending order and then we can select the first 100 from the reducers.
+
+2.Make the key as 1 so that all the word , word count values go to the one reducer and then we can sort the values there with respect to the word count and and take the first 100 words.
+
+3.We have used is :- that as we are delaing with big data where the work is divided into mappers and combiners on the local machines and the reducers on other machines.We have selected the top 100
+words in the mapper . As the different mappers will produce top 100 words from their received data then the reducers will receive only the 100 * Number of mappers as the Data and then after sorting based 
+on the word count we can easily find the top 100 words.
+
+Details about our program:-
+
+Mapper has collected the key , value pairs and then stored in the tree map structure available in Java Environment which stores the data in the the key , value pair where the key is the word count and the value is the word
+Now ehenever the structure has the more than 100 records the first i.e the lowest one is deleted so thst we always have the top 100 high frequency words of the particular mapper.
+
+Then It is to be noted on the clean up of task by the mapper only the dta structure is passed onto the shuffle sorting and then to the reducers.
+Reducers have the similar tree map structure to maintain the sorted 100 key value pairs based on the key i.e. word count 
+
+And then the reducer write on the clean up the structure on to the output file to give us the desired output.
+
+Part D
+
+As asked in the part d of the task that as all the values will pass on to the reducers and then the reducers have to keep th 100 or desired number sorted for giving the top 100 high frequency words.
+But this is inefficient as the network bandwidth will be consumed more so it is better to transfer the data onto the mappers or combiners as the mathematical property of associativity it satisfies i.e. that we can divide the
+th work among mappers and then have sorted outputs from them and then we will passon the reduced(less data) output to the reducers and hence we can have the top 100 among the top 100 of various mappers.
+
+Part D
+
+We have included the task of combiner in our own mapper and then send the data to the reducers.
+
+So , we have tried to use the efficient method for the Big Data for this problem. 
+
+
+
+Note:- The Practice Java File is the second round of the map reduce for couting the top 100 hf words
+  
+
+
+
+  
+

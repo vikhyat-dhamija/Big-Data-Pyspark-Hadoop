@@ -1,0 +1,9 @@
+Step 1 :-hadoop fs -mkdir /input_dir_twcount
+
+Step 2 :- hadoop fs -put input_twc.txt  /input_dir_twcount
+
+Step 3:-bin\hadoop jar Word_count_jmd.jar /input_dir_twcount/input_twc.txt /output_dir_twc_part1
+
+Step4:- bin\hadoop jar hf_word_count.jar /output_dir_twc_part1/part-r-00000 /output_dir_twc_part2_
+
+Step%:- hadoop fs -cat  /output_dir_twc_part2_/*

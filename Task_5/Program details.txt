@@ -1,0 +1,33 @@
+task 5 :
+
+We have taken input from the file provided with the recitation.
+
+We have used the Mr JoB package in Python for hadoop streaming 
+
+python filename -r hadoop is used for running this on the hadoop streaming.
+
+The sample output screenshots are provided which are many of the total as the output was
+much larger to present all the screenshots.
+
+Logic of the program is that:
+
+We have defined the mapper and reducer as seen in the class derived from the MR Job Class in Mr Job package
+
+Mapper has to provide the values with respect to key so that based on the certain key the th values can be reduced to the desired output
+
+here key is the output matrix row and col index and for that we need to have that row and col from the
+multiplying matrices
+
+Like for 1,1 we nned to have 1st whole row of A and 1st whole column of B
+
+so for 1,2 we need to have first row of A and 2nd column of B
+
+In order to pass values for getting the row, column output of the multplied result we need to make
+that for example for 1,1 of the we create that first row is attached 1 and its row number is 1 and the column number will be index
+
+So that means in case of multiplication we will produce 100 in our case(rank) values and similarly for the columns also and then we 
+add the values based on the key created.
+
+More logic can be easily comprehended by looking at the code.  
+
+
